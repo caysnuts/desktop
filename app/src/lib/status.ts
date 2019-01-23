@@ -5,6 +5,7 @@ import {
   WorkingDirectoryStatus,
   isManualConflict,
   isConflictWithMarkers,
+  isConflictedFileStatus,
 } from '../models/status'
 import { assertNever } from './fatal-error'
 
@@ -71,4 +72,23 @@ export function hasUnresolvedConflicts(status: ConflictedFileStatus) {
 
   // text file will have conflict markers removed
   return status.conflictMarkerCount > 0
+}
+
+/** Filter working directory changes for conflicted or resolved files  */
+export function getUnmergedFiles(status: WorkingDirectoryStatus) {
+  return status.files.filter(f => isConflictedFile(f.status))
+}
+
+/** Filter working directory changes for resolved files  */
+export function getResolvedFiles(status: WorkingDirectoryStatus) {
+  return status.files.filter(
+    f => isConflictedFileStatus(f.status) && !hasUnresolvedConflicts(f.status)
+  )
+}
+
+/** Filter working directory changes for conflicted files  */
+export function getConflictedFiles(status: WorkingDirectoryStatus) {
+  return status.files.filter(
+    f => isConflictedFileStatus(f.status) && hasUnresolvedConflicts(f.status)
+  )
 }
