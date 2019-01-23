@@ -23,7 +23,10 @@ import { DiffSelectionType, DiffSelection } from '../../models/diff'
 import { Repository } from '../../models/repository'
 import { IAheadBehind } from '../../models/branch'
 import { fatalError } from '../../lib/fatal-error'
-import { enableStatusWithoutOptionalLocks } from '../feature-flag'
+import {
+  enableStatusWithoutOptionalLocks,
+  enableNewRebaseFlow,
+} from '../feature-flag'
 import { isMergeHeadSet } from './merge'
 import { isRebaseHeadSet } from './rebase'
 
@@ -182,10 +185,20 @@ export async function getStatus(
   const mergeHeadFound = await isMergeHeadSet(repository)
   const rebaseHeadFound = await isRebaseHeadSet(repository)
 
-  // if we have any conflicted files reported by status, let
-  const conflictState = mergeHeadFound
-    ? await getFilesWithConflictMarkers(repository.path)
-    : new Map<string, number>()
+  let conflictState: Map<string, number>
+
+  if (enableNewRebaseFlow()) {
+    // if MERGE_HEAD or REBASE_HEAD found, look for conflicted files
+    conflictState =
+      mergeHeadFound || rebaseHeadFound
+        ? await getFilesWithConflictMarkers(repository.path)
+        : new Map<string, number>()
+  } else {
+    // if MERGE_HEAD found, look for conflicted files
+    conflictState = mergeHeadFound
+      ? await getFilesWithConflictMarkers(repository.path)
+      : new Map<string, number>()
+  }
 
   // Map of files keyed on their paths.
   const files = entries.reduce(
