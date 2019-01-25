@@ -48,6 +48,7 @@ import {
   PushPullButton,
   BranchDropdown,
   RevertProgress,
+  ToolbarCheckBox
 } from './toolbar'
 import { OcticonSymbol, iconForRepository } from './octicons'
 import {
@@ -1787,6 +1788,12 @@ export class App extends React.Component<IAppProps, IAppState> {
       />
     )
   }
+  private renderGerritCheckBox() {
+    return (
+      <ToolbarCheckBox
+      />
+    )
+  }
 
   private showCreateBranch = () => {
     const selection = this.state.selectedState
@@ -1968,6 +1975,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         </div>
         {this.renderBranchToolbarButton()}
         {this.renderPushPullToolbarButton()}
+        {this.renderGerritCheckBox()}
       </Toolbar>
     )
   }

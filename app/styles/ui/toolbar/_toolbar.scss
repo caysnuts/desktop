@@ -43,6 +43,19 @@
     }
   }
 
+  .toolbar-checkbox {
+    &.checkbox{
+      margin-left: 20px;
+      margin-top: 10px;
+      display: flex;
+    }
+    border-right: 1px solid var(--toolbar-button-border-color);
+    width: 80px;
+    display: flex;
+    text-align: center;
+    flex-direction: column;
+  }
+
   .toolbar-button {
     &.revert-progress {
       width: 230px;
