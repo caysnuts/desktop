@@ -40,6 +40,9 @@ interface IPushPullButtonProps {
    * Used for setting the enabled/disabled and the description text.
    */
   readonly tipState: TipState
+
+
+  readonly isGerrit: boolean
 }
 
 /**
@@ -206,7 +209,7 @@ export class PushPullButton extends React.Component<IPushPullButtonProps, {}> {
     const repository = this.props.repository
     const dispatcher = this.props.dispatcher
     const aheadBehind = this.props.aheadBehind
-
+    const isGerrit = this.props.isGerrit
     if (!aheadBehind) {
       dispatcher.push(repository)
       return
@@ -217,7 +220,12 @@ export class PushPullButton extends React.Component<IPushPullButtonProps, {}> {
     if (behind > 0) {
       dispatcher.pull(repository)
     } else if (ahead > 0) {
-      dispatcher.push(repository)
+      if (isGerrit) {
+        dispatcher.pushToGerrit(repository)
+      }else {
+        dispatcher.push(repository)
+      }
+
     } else {
       dispatcher.fetch(repository, FetchType.UserInitiatedTask)
     }

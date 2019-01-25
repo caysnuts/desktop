@@ -14,91 +14,54 @@ import {
 import { Account } from '../../models/account'
 import { AppMenu, IMenu } from '../../models/app-menu'
 import { IAuthor } from '../../models/author'
-import {
-  Branch,
-  eligibleForFastForward,
-  IAheadBehind,
-} from '../../models/branch'
+import { Branch, eligibleForFastForward, IAheadBehind } from '../../models/branch'
 import { BranchesTab } from '../../models/branches-tab'
 import { CloneRepositoryTab } from '../../models/clone-repository-tab'
 import { CloningRepository } from '../../models/cloning-repository'
 import { Commit, ICommitContext } from '../../models/commit'
-import {
-  DiffSelection,
-  DiffSelectionType,
-  DiffType,
-  ImageDiffType,
-} from '../../models/diff'
+import { DiffSelection, DiffSelectionType, DiffType, ImageDiffType } from '../../models/diff'
 import { FetchType } from '../../models/fetch'
 import { GitHubRepository } from '../../models/github-repository'
 import { Owner } from '../../models/owner'
 import { PullRequest } from '../../models/pull-request'
 import { forkPullRequestRemoteName, IRemote } from '../../models/remote'
+import { ILocalRepositoryState, nameOf, Repository } from '../../models/repository'
 import {
-  ILocalRepositoryState,
-  nameOf,
-  Repository,
-} from '../../models/repository'
-import {
+  AppFileStatusKind,
   CommittedFileChange,
   WorkingDirectoryFileChange,
   WorkingDirectoryStatus,
-  AppFileStatusKind,
 } from '../../models/status'
 import { TipState } from '../../models/tip'
 import { ICommitMessage } from '../../models/commit-message'
-import {
-  Progress,
-  ICheckoutProgress,
-  IFetchProgress,
-  IRevertProgress,
-} from '../../models/progress'
+import { ICheckoutProgress, IFetchProgress, IRevertProgress, Progress } from '../../models/progress'
 import { Popup, PopupType } from '../../models/popup'
 import { IGitAccount } from '../../models/git-account'
 import { getAppPath } from '../../ui/lib/app-proxy'
-import {
-  ApplicationTheme,
-  getPersistedTheme,
-  setPersistedTheme,
-} from '../../ui/lib/application-theme'
-import {
-  getAppMenu,
-  updatePreferredAppMenuItemLabels,
-} from '../../ui/main-process-proxy'
-import {
-  API,
-  getAccountForEndpoint,
-  getDotComAPIEndpoint,
-  getEnterpriseAPIURL,
-  IAPIUser,
-} from '../api'
+import { ApplicationTheme, getPersistedTheme, setPersistedTheme } from '../../ui/lib/application-theme'
+import { getAppMenu, updatePreferredAppMenuItemLabels } from '../../ui/main-process-proxy'
+import { API, getAccountForEndpoint, getDotComAPIEndpoint, getEnterpriseAPIURL, IAPIUser } from '../api'
 import { shell } from '../app-shell'
 import {
   CompareAction,
-  HistoryTabMode,
+  ComparisonMode,
   Foldout,
   FoldoutType,
+  HistoryTabMode,
   IAppState,
   ICompareBranch,
   ICompareFormUpdate,
   ICompareToBranch,
   IDisplayHistory,
+  MergeConflictsBannerState,
+  MergeResultStatus,
   PossibleSelections,
   RepositorySectionTab,
   SelectionType,
-  MergeResultStatus,
-  ComparisonMode,
   SuccessfulMergeBannerState,
-  MergeConflictsBannerState,
 } from '../app-state'
 import { IGitHubUser } from '../databases/github-user-database'
-import {
-  ExternalEditor,
-  findEditorOrDefault,
-  getAvailableEditors,
-  launchExternalEditor,
-  parse,
-} from '../editors'
+import { ExternalEditor, findEditorOrDefault, getAvailableEditors, launchExternalEditor, parse } from '../editors'
 import { assertNever, fatalError, forceUnwrap } from '../fatal-error'
 
 import { findAccountForRemoteURL } from '../find-account'
@@ -108,57 +71,39 @@ import { getAccountForRepository } from '../get-account-for-repository'
 import {
   abortMerge,
   addRemote,
+  appendIgnoreRule,
   checkoutBranch,
   createBranch,
   createCommit,
+  createMergeCommit,
   deleteBranch,
   formatAsLocalRef,
   getAuthorIdentity,
   getBranchAheadBehind,
+  getBranchesPointedAt,
   getChangedFiles,
   getCommitDiff,
   getMergeBase,
   getRemotes,
   getWorkingDirectoryDiff,
   isCoAuthoredByTrailer,
+  isGitRepository,
   mergeTree,
   pull as pullRepo,
   push as pushRepo,
+  pushToGerrit as pushToGerritRepo,
   renameBranch,
-  updateRef,
   saveGitIgnore,
-  appendIgnoreRule,
-  createMergeCommit,
-  getBranchesPointedAt,
-  isGitRepository,
+  updateRef,
 } from '../git'
-import {
-  installGlobalLFSFilters,
-  installLFSHooks,
-  isUsingLFS,
-} from '../git/lfs'
+import { installGlobalLFSFilters, installLFSHooks, isUsingLFS } from '../git/lfs'
 import { inferLastPushForRepository } from '../infer-last-push-for-repository'
 import { updateMenuState } from '../menu-update'
 import { merge } from '../merge'
-import {
-  IMatchedGitHubRepository,
-  matchGitHubRepository,
-  repositoryMatchesRemote,
-} from '../repository-matching'
+import { IMatchedGitHubRepository, matchGitHubRepository, repositoryMatchesRemote } from '../repository-matching'
 import { RetryAction, RetryActionType } from '../../models/retry-actions'
-import {
-  Default as DefaultShell,
-  findShellOrDefault,
-  launchShell,
-  parse as parseShell,
-  Shell,
-} from '../shells'
-import {
-  ILaunchStats,
-  StatsStore,
-  markUsageStatsNoteSeen,
-  hasSeenUsageStatsNote,
-} from '../stats'
+import { Default as DefaultShell, findShellOrDefault, launchShell, parse as parseShell, Shell } from '../shells'
+import { hasSeenUsageStatsNote, ILaunchStats, markUsageStatsNoteSeen, StatsStore } from '../stats'
 import { hasShownWelcomeFlow, markWelcomeFlowComplete } from '../welcome'
 import { getWindowState, WindowState } from '../window-state'
 import { TypedBaseStore } from './base-store'
@@ -173,13 +118,10 @@ import { RepositoryStateCache } from './repository-state-cache'
 import { readEmoji } from '../read-emoji'
 import { GitStoreCache } from './git-store-cache'
 import { MergeConflictsErrorContext } from '../git-error-context'
-import { setNumber, setBoolean, getBoolean, getNumber } from '../local-storage'
+import { getBoolean, getNumber, setBoolean, setNumber } from '../local-storage'
 import { ExternalEditorError } from '../editors/shared'
 import { ApiRepositoriesStore } from './api-repositories-store'
-import {
-  updateChangedFiles,
-  updateConflictState,
-} from './updates/changes-state'
+import { updateChangedFiles, updateConflictState } from './updates/changes-state'
 import { ManualConflictResolution } from '../../models/manual-conflict-resolution'
 
 /**
@@ -233,6 +175,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
   private showWelcomeFlow = false
   private focusCommitMessage = false
+  private isGerrit = true
   private currentPopup: Popup | null = null
   private currentFoldout: Foldout | null = null
   private errors: ReadonlyArray<Error> = new Array<Error>()
@@ -501,6 +444,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       errors: this.errors,
       showWelcomeFlow: this.showWelcomeFlow,
       focusCommitMessage: this.focusCommitMessage,
+      isGerrit: this.isGerrit,
       emoji: this.emoji,
       sidebarWidth: this.sidebarWidth,
       commitSummaryWidth: this.commitSummaryWidth,
@@ -2399,6 +2343,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
     })
   }
 
+  public async _pushToGerrit(repository: Repository): Promise<void> {
+    return this.withAuthenticatingUser(repository, (repository, account) => {
+      return this.performPushToGerrit(repository, account)
+    })
+  }
+
   private async performPush(
     repository: Repository,
     account: IGitAccount | null
@@ -2463,6 +2413,153 @@ export class AppStore extends TypedBaseStore<IAppState> {
         await gitStore.performFailableOperation(
           async () => {
             await pushRepo(
+              repository,
+              account,
+              remote.name,
+              branch.name,
+              branch.upstreamWithoutRemote,
+              progress => {
+                this.updatePushPullFetchProgress(repository, {
+                  ...progress,
+                  title: pushTitle,
+                  value: pushWeight * progress.value,
+                })
+              }
+            )
+
+            await gitStore.fetchRemotes(
+              account,
+              [remote],
+              false,
+              fetchProgress => {
+                this.updatePushPullFetchProgress(repository, {
+                  ...fetchProgress,
+                  value: pushWeight + fetchProgress.value * fetchWeight,
+                })
+              }
+            )
+
+            const refreshTitle = __DARWIN__
+              ? 'Refreshing Repository'
+              : 'Refreshing repository'
+            const refreshStartProgress = pushWeight + fetchWeight
+
+            this.updatePushPullFetchProgress(repository, {
+              kind: 'generic',
+              title: refreshTitle,
+              value: refreshStartProgress,
+            })
+
+            await this._refreshRepository(repository)
+
+            this.updatePushPullFetchProgress(repository, {
+              kind: 'generic',
+              title: refreshTitle,
+              description: 'Fast-forwarding branches',
+              value: refreshStartProgress + refreshWeight * 0.5,
+            })
+
+            await this.fastForwardBranches(repository)
+          },
+          { retryAction }
+        )
+
+        this.updatePushPullFetchProgress(repository, null)
+
+        const prUpdater = this.currentPullRequestUpdater
+        if (prUpdater) {
+          const state = this.repositoryStateCache.get(repository)
+          const currentPR = state.branchesState.currentPullRequest
+          const gitHubRepository = repository.gitHubRepository
+
+          if (currentPR && gitHubRepository) {
+            prUpdater.didPushPullRequest(currentPR)
+          }
+        }
+
+        const { accounts } = this.getState()
+        const githubAccount = await findAccountForRemoteURL(
+          remote.url,
+          accounts
+        )
+
+        if (githubAccount === null) {
+          this.statsStore.recordPushToGenericRemote()
+        } else if (githubAccount.endpoint === getDotComAPIEndpoint()) {
+          this.statsStore.recordPushToGitHub()
+        } else if (
+          githubAccount.endpoint === getEnterpriseAPIURL(githubAccount.endpoint)
+        ) {
+          this.statsStore.recordPushToGitHubEnterprise()
+        }
+      }
+    })
+  }
+
+  private async performPushToGerrit(
+    repository: Repository,
+    account: IGitAccount | null
+  ): Promise<void> {
+    const state = this.repositoryStateCache.get(repository)
+    const { remote } = state
+    if (remote === null) {
+      this._showPopup({
+        type: PopupType.PublishRepository,
+        repository,
+      })
+
+      return
+    }
+
+    return this.withPushPull(repository, async () => {
+      const { tip } = state.branchesState
+
+      if (tip.kind === TipState.Unborn) {
+        throw new Error('The current branch is unborn.')
+      }
+
+      if (tip.kind === TipState.Detached) {
+        throw new Error('The current repository is in a detached HEAD state.')
+      }
+
+      if (tip.kind === TipState.Valid) {
+        const { branch } = tip
+
+        const pushTitle = `Pushing to ${remote.name}`
+
+        // Emit an initial progress even before our push begins
+        // since we're doing some work to get remotes up front.
+        this.updatePushPullFetchProgress(repository, {
+          kind: 'push',
+          title: pushTitle,
+          value: 0,
+          remote: remote.name,
+          branch: branch.name,
+        })
+
+        // Let's say that a push takes roughly twice as long as a fetch,
+        // this is of course highly inaccurate.
+        let pushWeight = 2.5
+        let fetchWeight = 1
+
+        // Let's leave 10% at the end for refreshing
+        const refreshWeight = 0.1
+
+        // Scale pull and fetch weights to be between 0 and 0.9.
+        const scale = (1 / (pushWeight + fetchWeight)) * (1 - refreshWeight)
+
+        pushWeight *= scale
+        fetchWeight *= scale
+
+        const retryAction: RetryAction = {
+          type: RetryActionType.Push,
+          repository,
+        }
+
+        const gitStore = this.gitStoreCache.get(repository)
+        await gitStore.performFailableOperation(
+          async () => {
+            await pushToGerritRepo(
               repository,
               account,
               remote.name,
@@ -3030,6 +3127,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
   public _setCommitMessageFocus(focus: boolean) {
     if (this.focusCommitMessage !== focus) {
       this.focusCommitMessage = focus
+      this.emitUpdate()
+    }
+  }
+  public _setIsGerrit(isGerrit: boolean) {
+    if (this.isGerrit !== isGerrit) {
+      this.isGerrit = isGerrit
       this.emitUpdate()
     }
   }

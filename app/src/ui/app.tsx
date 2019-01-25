@@ -1774,9 +1774,10 @@ export class App extends React.Component<IAppProps, IAppState> {
     const progress = state.pushPullFetchProgress
 
     const tipState = state.branchesState.tip.kind
-
+    const isGerrit = this.state.isGerrit
     return (
       <PushPullButton
+        isGerrit={isGerrit}
         dispatcher={this.props.dispatcher}
         repository={selection.repository}
         aheadBehind={state.aheadBehind}
@@ -1788,10 +1789,12 @@ export class App extends React.Component<IAppProps, IAppState> {
       />
     )
   }
+  private gerritCheckBoxChange = (event: boolean) => {
+    this.props.dispatcher.setIsGerrit(event)
+  }
   private renderGerritCheckBox() {
     return (
-      <ToolbarCheckBox
-      />
+      <ToolbarCheckBox  isGerrit={this.state.isGerrit} onChange={this.gerritCheckBoxChange}/>
     )
   }
 

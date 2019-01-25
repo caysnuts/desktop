@@ -31,7 +31,8 @@ export interface IToolbarCheckBoxProps {
    * operation is currently in flight.
    */
   readonly progressValue?: number
-
+  readonly isGerrit?: boolean
+  readonly onChange?: (event: boolean) => void
 }
 
 /**
@@ -39,6 +40,12 @@ export interface IToolbarCheckBoxProps {
  */
 export class ToolbarCheckBox extends React.Component<IToolbarCheckBoxProps, {}> {
 
+
+  private onChange = (event: React.FormEvent<HTMLInputElement>) => {
+    if (this.props.onChange) {
+      this.props.onChange(event.currentTarget.checked)
+    }
+  }
   public render() {
     const className = classNames(
       'toolbar-checkbox',
@@ -50,7 +57,7 @@ export class ToolbarCheckBox extends React.Component<IToolbarCheckBoxProps, {}> 
         className={className}
       >
         <div className="checkbox">
-          <Checkbox value={CheckboxValue.On}></Checkbox>
+          <Checkbox value={this.props.isGerrit?CheckboxValue.On:CheckboxValue.Off} onChange={this.onChange}></Checkbox>
           <div className="status">On</div>
         </div>
         <div className="text">
