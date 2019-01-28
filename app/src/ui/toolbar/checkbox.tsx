@@ -48,7 +48,7 @@ export class ToolbarCheckBox extends React.Component<IToolbarCheckBoxProps, {}> 
   }
   public render() {
     const className = classNames(
-      'toolbar-checkbox',
+      'toolbar-gerrit-box',
       { 'has-progress': this.props.progressValue !== undefined },
       this.props.className
     )
@@ -56,12 +56,11 @@ export class ToolbarCheckBox extends React.Component<IToolbarCheckBoxProps, {}> 
       <div
         className={className}
       >
-        <div className="checkbox">
+        <div className="toolbar-checkbox">
           <Checkbox value={this.props.isGerrit?CheckboxValue.On:CheckboxValue.Off} onChange={this.onChange}></Checkbox>
-          <div className="status">On</div>
         </div>
         <div className="text">
-          <div className="title">Gerrit</div>
+          <div className="title">On Gerrit</div>
         </div>
       </div>
     )

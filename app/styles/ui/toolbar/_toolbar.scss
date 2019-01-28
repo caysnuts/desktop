@@ -43,17 +43,19 @@
     }
   }
 
-  .toolbar-checkbox {
-    &.checkbox{
-      margin-left: 20px;
-      margin-top: 10px;
-      display: flex;
-    }
+  .toolbar-gerrit-box {
     border-right: 1px solid var(--toolbar-button-border-color);
     width: 80px;
     display: flex;
     text-align: center;
     flex-direction: column;
+  }
+  .toolbar-gerrit-box {
+    .toolbar-checkbox{
+      margin-right: auto;
+      margin-left: auto;
+      margin-top: 10px;
+    }
   }
 
   .toolbar-button {
