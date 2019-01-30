@@ -45,13 +45,19 @@
 
   .toolbar-gerrit-box {
     border-right: 1px solid var(--toolbar-button-border-color);
-    width: 80px;
+    width: 180px;
     display: flex;
     text-align: center;
     flex-direction: column;
   }
+
   .toolbar-gerrit-box {
-    .toolbar-checkbox{
+    .toolbar-checkbox {
+      margin-right: auto;
+      margin-left: auto;
+    }
+
+    .text {
       margin-right: auto;
       margin-left: auto;
       margin-top: 10px;
