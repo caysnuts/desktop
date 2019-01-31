@@ -21,7 +21,7 @@ export class ToolbarOpenIcode extends React.Component<IToolbarOpenIcodeProps, {}
       <ToolbarButton
         title={'效率云查看'}
         description={'浏览器打开'}
-        className="push-pull-button"
+        className="toolbar-open-gerrit"
         icon={this.getIcon()}
         iconClassName={''}
         style={ToolbarButtonStyle.Subtitle}

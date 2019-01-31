@@ -45,7 +45,7 @@
 
   .toolbar-gerrit-box {
     border-right: 1px solid var(--toolbar-button-border-color);
-    width: 180px;
+    width: 100px;
     display: flex;
     text-align: center;
     flex-direction: column;
@@ -63,7 +63,19 @@
       margin-top: 10px;
     }
   }
+  .toolbar-open-gerrit {
+    width: 120px;
+  }
 
+  .toolbar-open-card {
+    display: flex;
+    width: 220px;
+    .toolbar-open-card-button{
+      flex: 8;
+    }.toolbar-open-card-select{
+      margin: auto;
+    }
+  }
   .toolbar-button {
     &.revert-progress {
       width: 230px;

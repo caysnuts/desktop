@@ -49,7 +49,7 @@ import {
   BranchDropdown,
   RevertProgress,
   ToolbarCheckBox,
-  ToolbarOpenIcode,
+  ToolbarOpenIcode, ToolbarOpenIcodeCard,
 } from './toolbar'
 import { OcticonSymbol, iconForRepository } from './octicons'
 import {
@@ -1806,16 +1806,27 @@ export class App extends React.Component<IAppProps, IAppState> {
     if (!selection || selection.type !== SelectionType.Repository) {
       return null
     }
-    const {remote,branchesState} = selection.state
+    const { remote, branchesState } = selection.state
     const tip = branchesState.tip
     const currentBranch = tip.kind === TipState.Valid ? tip.branch : null
-    if(remote && remote.url && currentBranch){
+    if (remote && remote.url && currentBranch) {
       return (
-        <ToolbarOpenIcode remoteUrl={remote.url} branchName={currentBranch.name} />
+        <ToolbarOpenIcode remoteUrl={remote.url} branchName={currentBranch.name}/>
       )
-    }else{
+    } else {
       return <div></div>
     }
+  }
+
+  private renderOpenIcodeCard() {
+    const selection = this.state.selectedState
+    if (!selection || selection.type !== SelectionType.Repository) {
+      return null
+    }
+    const {commitLookup,compareState} = selection.state
+    return (
+      <ToolbarOpenIcodeCard commitLookup = {commitLookup} compareState={compareState}/>
+      )
   }
 
   private showCreateBranch = () => {
@@ -2001,6 +2012,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         {this.renderPushPullToolbarButton()}
         {this.renderGerritCheckBox()}
         {this.renderOpenIcode()}
+        {this.renderOpenIcodeCard()}
       </Toolbar>
     )
   }

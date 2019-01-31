@@ -4,5 +4,6 @@ export * from './dropdown'
 export * from './push-pull-button'
 export * from "./checkbox"
 export * from "./open-icode"
+export * from "./open-icode-card"
 export * from './branch-dropdown'
 export { RevertProgress } from './revert-progress'
