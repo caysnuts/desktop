@@ -138,6 +138,7 @@ import {
   abortRebase,
   continueRebase,
   rebase,
+  PushOptions,
 } from '../git'
 import {
   installGlobalLFSFilters,
@@ -194,6 +195,7 @@ import {
 import { BranchPruner } from './helpers/branch-pruner'
 import { enableBranchPruning, enablePullWithRebase } from '../feature-flag'
 import { Banner, BannerType } from '../../models/banner'
+import { RebaseProgressOptions } from '../../models/rebase'
 
 /**
  * As fast-forwarding local branches is proportional to the number of local
@@ -212,8 +214,10 @@ const commitSummaryWidthConfigKey: string = 'commit-summary-width'
 
 const confirmRepoRemovalDefault: boolean = true
 const confirmDiscardChangesDefault: boolean = true
+const askForConfirmationOnForcePushDefault = true
 const confirmRepoRemovalKey: string = 'confirmRepoRemoval'
 const confirmDiscardChangesKey: string = 'confirmDiscardChanges'
+const confirmForcePushKey: string = 'confirmForcePush'
 
 const externalEditorKey: string = 'externalEditor'
 
@@ -289,6 +293,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
   private confirmRepoRemoval: boolean = confirmRepoRemovalDefault
   private confirmDiscardChanges: boolean = confirmDiscardChangesDefault
+  private askForConfirmationOnForcePush = askForConfirmationOnForcePushDefault
   private imageDiffType: ImageDiffType = imageDiffTypeDefault
 
   private selectedExternalEditor?: ExternalEditor
@@ -532,6 +537,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       currentBanner: this.currentBanner,
       askForConfirmationOnRepositoryRemoval: this.confirmRepoRemoval,
       askForConfirmationOnDiscardChanges: this.confirmDiscardChanges,
+      askForConfirmationOnForcePush: this.askForConfirmationOnForcePush,
       selectedExternalEditor: this.selectedExternalEditor,
       imageDiffType: this.imageDiffType,
       selectedShell: this.selectedShell,
@@ -1454,6 +1460,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.confirmDiscardChanges = getBoolean(
       confirmDiscardChangesKey,
       confirmDiscardChangesDefault
+    )
+
+    this.askForConfirmationOnForcePush = getBoolean(
+      confirmForcePushKey,
+      askForConfirmationOnForcePushDefault
     )
 
     const externalEditorValue = await this.getSelectedExternalEditor()
@@ -2586,15 +2597,19 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
   }
 
-  public async _push(repository: Repository): Promise<void> {
+  public async _push(
+    repository: Repository,
+    options?: PushOptions
+  ): Promise<void> {
     return this.withAuthenticatingUser(repository, (repository, account) => {
-      return this.performPush(repository, account)
+      return this.performPush(repository, account, options)
     })
   }
 
   private async performPush(
     repository: Repository,
-    account: IGitAccount | null
+    account: IGitAccount | null,
+    options?: PushOptions
   ): Promise<void> {
     const state = this.repositoryStateCache.get(repository)
     const { remote } = state
@@ -2663,6 +2678,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
               remoteName,
               branch.name,
               branch.upstreamWithoutRemote,
+              options,
               progress => {
                 this.updatePushPullFetchProgress(repository, {
                   ...progress,
@@ -3359,16 +3375,17 @@ export class AppStore extends TypedBaseStore<IAppState> {
   public async _rebase(
     repository: Repository,
     baseBranch: string,
-    targetBranch: string
+    targetBranch: string,
+    progress?: RebaseProgressOptions
   ) {
     const gitStore = this.gitStoreCache.get(repository)
     return await gitStore.performFailableOperation(() =>
-      rebase(repository, baseBranch, targetBranch)
+      rebase(repository, baseBranch, targetBranch, progress)
     )
   }
 
   /** This shouldn't be called directly. See `Dispatcher`. */
-  public async _abortRebase(repository: Repository): Promise<void> {
+  public async _abortRebase(repository: Repository) {
     const gitStore = this.gitStoreCache.get(repository)
     return await gitStore.performFailableOperation(() =>
       abortRebase(repository)
@@ -3378,11 +3395,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
   /** This shouldn't be called directly. See `Dispatcher`. */
   public async _continueRebase(
     repository: Repository,
-    workingDirectory: WorkingDirectoryStatus
+    workingDirectory: WorkingDirectoryStatus,
+    manualResolutions: ReadonlyMap<string, ManualConflictResolution>
   ) {
     const gitStore = this.gitStoreCache.get(repository)
     return await gitStore.performFailableOperation(() =>
-      continueRebase(repository, workingDirectory.files)
+      continueRebase(repository, workingDirectory.files, manualResolutions)
     )
   }
 
@@ -3518,6 +3536,13 @@ export class AppStore extends TypedBaseStore<IAppState> {
     setBoolean(confirmDiscardChangesKey, value)
     this.emitUpdate()
 
+    return Promise.resolve()
+  }
+
+  public _setConfirmForcePushSetting(value: boolean): Promise<void> {
+    this.askForConfirmationOnForcePush = value
+    setBoolean(confirmForcePushKey, value)
+    this.emitUpdate()
     return Promise.resolve()
   }
 

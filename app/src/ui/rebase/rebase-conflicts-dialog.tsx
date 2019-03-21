@@ -2,7 +2,6 @@ import * as React from 'react'
 import { DialogContent, Dialog, DialogFooter } from '../dialog'
 import { ButtonGroup } from '../lib/button-group'
 import { Button } from '../lib/button'
-import { DialogHeader } from '../dialog/header'
 import {
   WorkingDirectoryStatus,
   WorkingDirectoryFileChange,
@@ -15,7 +14,6 @@ import {
 import { Dispatcher } from '../dispatcher'
 import { Repository } from '../../models/repository'
 import { ManualConflictResolution } from '../../models/manual-conflict-resolution'
-import { RebaseResult } from '../../lib/git'
 import { BannerType } from '../../models/banner'
 import { PopupType } from '../../models/popup'
 import {
@@ -66,14 +64,11 @@ export class RebaseConflictsDialog extends React.Component<
   }
 
   private onSubmit = async () => {
-    const result = await this.props.dispatcher.continueRebase(
+    await this.props.dispatcher.continueRebase(
       this.props.repository,
-      this.props.workingDirectory
+      this.props.workingDirectory,
+      this.props.manualResolutions
     )
-
-    if (result === RebaseResult.CompletedWithoutError) {
-      this.props.onDismissed()
-    }
   }
 
   private renderHeaderTitle(targetBranch: string, baseBranch?: string) {
@@ -161,14 +156,10 @@ export class RebaseConflictsDialog extends React.Component<
         id="rebase-conflicts-list"
         dismissable={true}
         onDismissed={this.onDismissed}
+        title={headerTitle}
         disableClickDismissalAlways={true}
         onSubmit={this.onSubmit}
       >
-        <DialogHeader
-          title={headerTitle}
-          dismissable={true}
-          onDismissed={this.onDismissed}
-        />
         <DialogContent>
           {this.renderContent(unmergedFiles, conflictedFilesCount)}
         </DialogContent>
