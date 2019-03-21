@@ -128,6 +128,7 @@ import {
   mergeTree,
   pull as pullRepo,
   push as pushRepo,
+  pushToGerrit as pushToGerritRepo,
   renameBranch,
   updateRef,
   saveGitIgnore,
@@ -248,6 +249,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
   private showWelcomeFlow = false
   private focusCommitMessage = false
+  private isGerrit = true
   private currentPopup: Popup | null = null
   private currentFoldout: Foldout | null = null
   private currentBanner: Banner | null = null
@@ -521,6 +523,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       errors: this.errors,
       showWelcomeFlow: this.showWelcomeFlow,
       focusCommitMessage: this.focusCommitMessage,
+      isGerrit: this.isGerrit,
       emoji: this.emoji,
       sidebarWidth: this.sidebarWidth,
       commitSummaryWidth: this.commitSummaryWidth,
@@ -2592,6 +2595,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
     })
   }
 
+  public async _pushToGerrit(repository: Repository): Promise<void> {
+    return this.withAuthenticatingUser(repository, (repository, account) => {
+      return this.performPushToGerrit(repository, account)
+    })
+  }
+
   private async performPush(
     repository: Repository,
     account: IGitAccount | null
@@ -2740,6 +2749,156 @@ export class AppStore extends TypedBaseStore<IAppState> {
       }
     })
   }
+
+  private async performPushToGerrit(
+    repository: Repository,
+    account: IGitAccount | null
+  ): Promise<void> {
+    const state = this.repositoryStateCache.get(repository)
+    const { remote } = state
+    if (remote === null) {
+      this._showPopup({
+        type: PopupType.PublishRepository,
+        repository,
+      })
+
+      return
+    }
+
+    return this.withPushPullFetch(repository, async () => {
+      const { tip } = state.branchesState
+
+      if (tip.kind === TipState.Unborn) {
+        throw new Error('The current branch is unborn.')
+      }
+
+      if (tip.kind === TipState.Detached) {
+        throw new Error('The current repository is in a detached HEAD state.')
+      }
+
+      if (tip.kind === TipState.Valid) {
+        const { branch } = tip
+
+        const remoteName = branch.remote || remote.name
+
+        const pushTitle = `Pushing to ${remoteName}`
+
+        // Emit an initial progress even before our push begins
+        // since we're doing some work to get remotes up front.
+        this.updatePushPullFetchProgress(repository, {
+          kind: 'push',
+          title: pushTitle,
+          value: 0,
+          remote: remoteName,
+          branch: branch.name,
+        })
+
+        // Let's say that a push takes roughly twice as long as a fetch,
+        // this is of course highly inaccurate.
+        let pushWeight = 2.5
+        let fetchWeight = 1
+
+        // Let's leave 10% at the end for refreshing
+        const refreshWeight = 0.1
+
+        // Scale pull and fetch weights to be between 0 and 0.9.
+        const scale = (1 / (pushWeight + fetchWeight)) * (1 - refreshWeight)
+
+        pushWeight *= scale
+        fetchWeight *= scale
+
+        const retryAction: RetryAction = {
+          type: RetryActionType.Push,
+          repository,
+        }
+
+        const gitStore = this.gitStoreCache.get(repository)
+        await gitStore.performFailableOperation(
+          async () => {
+            await pushToGerritRepo(
+              repository,
+              account,
+              remote.name,
+              branch.name,
+              branch.upstreamWithoutRemote,
+              progress => {
+                this.updatePushPullFetchProgress(repository, {
+                  ...progress,
+                  title: pushTitle,
+                  value: pushWeight * progress.value,
+                })
+              }
+            )
+
+            await gitStore.fetchRemotes(
+              account,
+              [remote],
+              false,
+              fetchProgress => {
+                this.updatePushPullFetchProgress(repository, {
+                  ...fetchProgress,
+                  value: pushWeight + fetchProgress.value * fetchWeight,
+                })
+              }
+            )
+
+            const refreshTitle = __DARWIN__
+              ? 'Refreshing Repository'
+              : 'Refreshing repository'
+            const refreshStartProgress = pushWeight + fetchWeight
+
+            this.updatePushPullFetchProgress(repository, {
+              kind: 'generic',
+              title: refreshTitle,
+              value: refreshStartProgress,
+            })
+
+            await this._refreshRepository(repository)
+
+            this.updatePushPullFetchProgress(repository, {
+              kind: 'generic',
+              title: refreshTitle,
+              description: 'Fast-forwarding branches',
+              value: refreshStartProgress + refreshWeight * 0.5,
+            })
+
+            await this.fastForwardBranches(repository)
+          },
+          { retryAction }
+        )
+
+        this.updatePushPullFetchProgress(repository, null)
+
+        const prUpdater = this.currentPullRequestUpdater
+        if (prUpdater) {
+          const state = this.repositoryStateCache.get(repository)
+          const currentPR = state.branchesState.currentPullRequest
+          const gitHubRepository = repository.gitHubRepository
+
+          if (currentPR && gitHubRepository) {
+            prUpdater.didPushPullRequest(currentPR)
+          }
+        }
+
+        const { accounts } = this.getState()
+        const githubAccount = await findAccountForRemoteURL(
+          remote.url,
+          accounts
+        )
+
+        if (githubAccount === null) {
+          this.statsStore.recordPushToGenericRemote()
+        } else if (githubAccount.endpoint === getDotComAPIEndpoint()) {
+          this.statsStore.recordPushToGitHub()
+        } else if (
+          githubAccount.endpoint === getEnterpriseAPIURL(githubAccount.endpoint)
+        ) {
+          this.statsStore.recordPushToGitHubEnterprise()
+        }
+      }
+    })
+  }
+
 
   private async isCommitting(
     repository: Repository,
@@ -3239,6 +3398,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
   public _setCommitMessageFocus(focus: boolean) {
     if (this.focusCommitMessage !== focus) {
       this.focusCommitMessage = focus
+      this.emitUpdate()
+    }
+  }
+  public _setIsGerrit(isGerrit: boolean) {
+    if (this.isGerrit !== isGerrit) {
+      this.isGerrit = isGerrit
       this.emitUpdate()
     }
   }

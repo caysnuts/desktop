@@ -325,6 +325,10 @@ export class Dispatcher {
     return this.appStore._push(repository)
   }
 
+  /** Push the current branch use Gerrit. */
+  public pushToGerrit(repository: Repository): Promise<void> {
+    return this.appStore._pushToGerrit(repository)
+  }
   /** Pull the current branch. */
   public pull(repository: Repository): Promise<void> {
     return this.appStore._pull(repository)
@@ -553,6 +557,11 @@ export class Dispatcher {
   /** Set the commit message input's focus. */
   public setCommitMessageFocus(focus: boolean) {
     this.appStore._setCommitMessageFocus(focus)
+  }
+
+  /** Set the commit message input's focus. */
+  public setIsGerrit(focus: boolean) {
+    this.appStore._setIsGerrit(focus)
   }
 
   /**

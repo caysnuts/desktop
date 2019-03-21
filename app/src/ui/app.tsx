@@ -46,6 +46,8 @@ import {
   PushPullButton,
   BranchDropdown,
   RevertProgress,
+  ToolbarCheckBox,
+  ToolbarOpenIcode, ToolbarOpenIcodeCard,
 } from './toolbar'
 import { OcticonSymbol, iconForRepository } from './octicons'
 import {
@@ -177,7 +179,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             this.performDeferredLaunchActions()
           })
         },
-        { timeout: ReadyDelay }
+        { timeout: ReadyDelay },
       )
 
       const initialTimeout = window.setTimeout(async () => {
@@ -204,7 +206,7 @@ export class App extends React.Component<IAppProps, IAppState> {
       'menu-event',
       (event: Electron.IpcMessageEvent, { name }: { name: MenuEvent }) => {
         this.onMenuEvent(name)
-      }
+      },
     )
 
     updateStore.onDidChange(state => {
@@ -235,7 +237,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         console.info(`Renderer ready time: ${stats.rendererReadyTime}ms`)
 
         this.props.dispatcher.recordLaunchStats(stats)
-      }
+      },
     )
 
     ipcRenderer.on(
@@ -246,14 +248,14 @@ export class App extends React.Component<IAppProps, IAppState> {
           certificate,
           error,
           url,
-        }: { certificate: Electron.Certificate; error: string; url: string }
+        }: { certificate: Electron.Certificate; error: string; url: string },
       ) => {
         this.props.dispatcher.showPopup({
           type: PopupType.UntrustedCertificate,
           certificate,
           url,
         })
-      }
+      },
     )
   }
 
@@ -466,7 +468,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     const state = this.props.appStore.getState()
     const accounts = state.accounts
     const dotComAccount = accounts.find(
-      a => a.endpoint === getDotComAPIEndpoint()
+      a => a.endpoint === getDotComAPIEndpoint(),
     )
     return dotComAccount || null
   }
@@ -475,7 +477,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     const state = this.props.appStore.getState()
     const accounts = state.accounts
     const enterpriseAccount = accounts.find(
-      a => a.endpoint !== getDotComAPIEndpoint()
+      a => a.endpoint !== getDotComAPIEndpoint(),
     )
     return enterpriseAccount || null
   }
@@ -499,7 +501,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.mergeBranch(
       selectedState.repository,
       defaultBranch.name,
-      mergeStatus
+      mergeStatus,
     )
   }
 
@@ -536,7 +538,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     const compareURL = `${htmlURL}/compare/${
       branchTip.branch.upstreamWithoutRemote
-    }`
+      }`
     this.props.dispatcher.openInBrowser(compareURL)
   }
 
@@ -610,7 +612,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     if (cloneUrl !== undefined) {
       this.props.dispatcher.changeCloneRepositoriesTab(
-        CloneRepositoryTab.Generic
+        CloneRepositoryTab.Generic,
       )
       initialURL = cloneUrl
     }
@@ -639,7 +641,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     await this.props.dispatcher.changeRepositorySection(
       state.repository,
-      RepositorySectionTab.History
+      RepositorySectionTab.History,
     )
 
     await this.props.dispatcher.updateCompareForm(state.repository, {
@@ -657,7 +659,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.closeCurrentFoldout()
     return this.props.dispatcher.changeRepositorySection(
       state.repository,
-      RepositorySectionTab.Changes
+      RepositorySectionTab.Changes,
     )
   }
 
@@ -782,7 +784,7 @@ export class App extends React.Component<IAppProps, IAppState> {
           const candidates = this.state.appMenuState[0].items
           const menuItemForAccessKey = findItemByAccessKey(
             event.key,
-            candidates
+            candidates,
           )
 
           if (menuItemForAccessKey && itemIsSelectable(menuItemForAccessKey)) {
@@ -791,7 +793,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                 menu
                   .withReset()
                   .withSelectedItem(menuItemForAccessKey)
-                  .withOpenedMenu(menuItemForAccessKey, true)
+                  .withOpenedMenu(menuItemForAccessKey, true),
               )
 
               this.props.dispatcher.showFoldout({
@@ -871,7 +873,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
       const existingRepository = matchExistingRepository(
         this.state.repositories,
-        path
+        path,
       )
 
       if (existingRepository) {
@@ -886,7 +888,7 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private removeRepository = (
-    repository: Repository | CloningRepository | null
+    repository: Repository | CloningRepository | null,
   ) => {
     if (!repository) {
       return
@@ -909,7 +911,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
   private onConfirmRepoRemoval = (
     repository: Repository,
-    deleteRepoFromDisk: boolean
+    deleteRepoFromDisk: boolean,
   ) => {
     this.props.dispatcher.removeRepositories([repository], deleteRepoFromDisk)
   }
@@ -1091,12 +1093,12 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private onContinueWithUntrustedCertificate = (
-    certificate: Electron.Certificate
+    certificate: Electron.Certificate,
   ) => {
     this.props.dispatcher.closePopup()
     showCertificateTrustDialog(
       certificate,
-      'Could not securely connect to the server, because its certificate is not trusted. Attackers might be trying to steal your information.\n\nTo connect unsafely, which may put your data at risk, you can “Always trust” the certificate and try again.'
+      'Could not securely connect to the server, because its certificate is not trusted. Attackers might be trying to steal your information.\n\nTo connect unsafely, which may put your data at risk, you can “Always trust” the certificate and try again.',
     )
   }
 
@@ -1351,7 +1353,7 @@ export class App extends React.Component<IAppProps, IAppState> {
           />
         )
       case PopupType.TermsAndConditions:
-        return <TermsAndConditions onDismissed={this.onPopupDismissed} />
+        return <TermsAndConditions onDismissed={this.onPopupDismissed}/>
       case PopupType.PushBranchCommits:
         return (
           <PushBranchCommits
@@ -1364,7 +1366,7 @@ export class App extends React.Component<IAppProps, IAppState> {
           />
         )
       case PopupType.CLIInstalled:
-        return <CLIInstalled onDismissed={this.onPopupDismissed} />
+        return <CLIInstalled onDismissed={this.onPopupDismissed}/>
       case PopupType.GenericGitAuthentication:
         return (
           <GenericGitAuthentication
@@ -1494,7 +1496,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         const { workingDirectory } = selectedState.state.changesState
         // double check that this repository is actually in merge
         const isInConflictedMerge = workingDirectory.files.some(file =>
-          isConflictedFile(file.status)
+          isConflictedFile(file.status),
         )
         if (!isInConflictedMerge) {
           return null
@@ -1676,14 +1678,14 @@ export class App extends React.Component<IAppProps, IAppState> {
     hostname: string,
     username: string,
     password: string,
-    retryAction: RetryAction
+    retryAction: RetryAction,
   ) => {
     this.onPopupDismissed()
 
     await this.props.dispatcher.saveGenericGitCredentials(
       hostname,
       username,
-      password
+      password,
     )
 
     this.props.dispatcher.performRetry(retryAction)
@@ -1713,11 +1715,11 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private renderZoomInfo() {
-    return <ZoomInfo windowZoomFactor={this.state.windowZoomFactor} />
+    return <ZoomInfo windowZoomFactor={this.state.windowZoomFactor}/>
   }
 
   private renderFullScreenInfo() {
-    return <FullScreenInfo windowState={this.state.windowState} />
+    return <FullScreenInfo windowState={this.state.windowState}/>
   }
 
   private clearError = (error: Error) => this.props.dispatcher.clearError(error)
@@ -1794,7 +1796,7 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private openInExternalEditor = (
-    repository: Repository | CloningRepository
+    repository: Repository | CloningRepository,
   ) => {
     if (!(repository instanceof Repository)) {
       return
@@ -1877,7 +1879,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     const state = selection.state
     const revertProgress = state.revertProgress
     if (revertProgress) {
-      return <RevertProgress progress={revertProgress} />
+      return <RevertProgress progress={revertProgress}/>
     }
 
     let remoteName = state.remote ? state.remote.name : null
@@ -1896,8 +1898,10 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     const { pullWithRebase } = state.branchesState
 
+    const isGerrit = this.state.isGerrit
     return (
       <PushPullButton
+        isGerrit={isGerrit}
         dispatcher={this.props.dispatcher}
         repository={selection.repository}
         aheadBehind={state.aheadBehind}
@@ -1910,6 +1914,44 @@ export class App extends React.Component<IAppProps, IAppState> {
         rebaseInProgress={rebaseInProgress}
       />
     )
+  }
+
+  private gerritCheckBoxChange = (event: boolean) => {
+    this.props.dispatcher.setIsGerrit(event)
+  }
+
+  private renderGerritCheckBox() {
+    return (
+      <ToolbarCheckBox isGerrit={this.state.isGerrit} onChange={this.gerritCheckBoxChange}/>
+    )
+  }
+
+  private renderOpenIcode() {
+    const selection = this.state.selectedState
+    if (!selection || selection.type !== SelectionType.Repository) {
+      return null
+    }
+    const { remote, branchesState } = selection.state
+    const tip = branchesState.tip
+    const currentBranch = tip.kind === TipState.Valid ? tip.branch : null
+    if (remote && remote.url && currentBranch) {
+      return (
+        <ToolbarOpenIcode remoteUrl={remote.url} branchName={currentBranch.name}/>
+      )
+    } else {
+      return <div></div>
+    }
+  }
+
+  private renderOpenIcodeCard() {
+    const selection = this.state.selectedState
+    if (!selection || selection.type !== SelectionType.Repository) {
+      return null
+    }
+    const {commitLookup,compareState} = selection.state
+    return (
+      <ToolbarOpenIcodeCard commitLookup = {commitLookup} compareState={compareState}/>
+      )
   }
 
   private showCreateBranch = () => {
@@ -1956,7 +1998,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
   private openCreatePullRequestInBrowser = (
     repository: Repository,
-    branch: Branch
+    branch: Branch,
   ) => {
     this.props.dispatcher.openCreatePullRequestInBrowser(repository, branch)
   }
@@ -2063,6 +2105,9 @@ export class App extends React.Component<IAppProps, IAppState> {
         </div>
         {this.renderBranchToolbarButton()}
         {this.renderPushPullToolbarButton()}
+        {this.renderGerritCheckBox()}
+        {this.renderOpenIcode()}
+        {this.renderOpenIcodeCard()}
       </Toolbar>
     )
   }
@@ -2085,7 +2130,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     const selectedState = state.selectedState
     if (!selectedState) {
-      return <NoRepositorySelected />
+      return <NoRepositorySelected/>
     }
 
     if (selectedState.type === SelectionType.Repository) {
@@ -2155,7 +2200,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     return (
       <div id="desktop-app-chrome" className={className}>
-        <AppTheme theme={currentTheme} />
+        <AppTheme theme={currentTheme}/>
         {this.renderTitlebar()}
         {this.state.showWelcomeFlow
           ? this.renderWelcomeFlow()

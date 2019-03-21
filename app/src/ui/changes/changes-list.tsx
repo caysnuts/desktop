@@ -391,7 +391,7 @@ export class ChangesList extends React.Component<
     singleFileCommit: boolean
   ) {
     if (!singleFileCommit) {
-      return 'Summary (required)'
+      return '输入卡片号'
     }
 
     const firstFile = files[0]

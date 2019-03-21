@@ -211,6 +211,7 @@ export interface IAppState {
    * See the ApiRepositoriesStore for more details on loading repositories
    */
   readonly apiRepositories: ReadonlyMap<Account, IAccountRepositories>
+  readonly isGerrit: boolean
 }
 
 export enum FoldoutType {

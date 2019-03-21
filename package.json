@@ -45,9 +45,9 @@
     "check-modified": "stop-build"
   },
   "author": {
-    "name": "GitHub, Inc.",
-    "email": "opensource+desktop@github.com",
-    "url": "https://desktop.github.com/"
+    "name": "mazusheng",
+    "email": "heavenmzs@gmail.com",
+    "url": ""
   },
   "license": "MIT",
   "engines": {

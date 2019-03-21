@@ -119,7 +119,8 @@ export function getReleaseSHA() {
 }
 
 export function getUpdatesURL() {
-  return `https://central.github.com/api/deployments/desktop/desktop/latest?version=${version}&env=${getReleaseChannel()}`
+  return `https://www.google.com`
+  // return `https://central.github.com/api/deployments/desktop/desktop/latest?version=${version}&env=${getReleaseChannel()}`
 }
 
 export function shouldMakeDelta() {
